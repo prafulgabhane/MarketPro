@@ -10,7 +10,7 @@ import concurrent.futures
 
 app = Flask(__name__)
 app.secret_key = "marketpro_secret_2026" 
-# FIXED: Reverted to native threading which plays perfectly with the stealth scraper
+# Use native threading so the C-based stealth scraper doesn't freeze the server
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
 global_market_state = {}
@@ -303,13 +303,10 @@ def fetch_market_pulse():
 def handle_screener_refresh():
     socketio.emit('screener_data_direct', global_market_state.get('stock_analysis', []), to=request.sid)
 
-# --- FIXED FOR RENDER DYNAMIC PORT BINDING ---
+# --- START BACKGROUND DATA ENGINE SO GUNICORN SEES IT ---
+engine_thread = threading.Thread(target=fetch_market_pulse, daemon=True)
+engine_thread.start()
+
 if __name__ == '__main__':
-    # Grab Render's random PORT environment variable, fallback to 5001 locally
     port = int(os.environ.get("PORT", 5001))
-    
-    # Start the engine in a standard background thread
-    threading.Thread(target=fetch_market_pulse, daemon=True).start()
-    
-    # Start the server listening on ALL addresses (0.0.0.0)
-    socketio.run(app, host='0.0.0.0', port=port, debug=False, allow_unsafe_werkzeug=True)
+    socketio.run(app, host='0.0.0.0', port=port, debug=False)
