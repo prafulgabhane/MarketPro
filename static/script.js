@@ -1,5 +1,5 @@
-// --- DYNAMIC SOCKET CONNECTION ---
-const socket = io(window.location.origin, { transports: ["websocket", "polling"] });
+// --- DYNAMIC CLOUD SOCKET CONNECTION ---
+const socket = io();
 
 let latestHeatmapData = [];
 let latestOIData = {};
@@ -25,7 +25,6 @@ window.livePrices = { NIFTY: 22000, BANKNIFTY: 46000, FINNIFTY: 20500, SENSEX: 7
 document.addEventListener("DOMContentLoaded", function() {
     console.log("MarketPro Premium JS Engine Loaded Successfully.");
 
-    // Navigation Logic
     document.querySelectorAll('.nav-item').forEach(item => {
         item.addEventListener('click', function() {
             try {
@@ -36,9 +35,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 const target = this.getAttribute('data-target');
                 if (target) document.getElementById(target).classList.add('active');
                 
-                // Initialize chart safely when tab is clicked
                 if(target === 'chart-section' && !chartInitialized) {
-                    // Small timeout ensures the CSS display:block has fully rendered before drawing
                     setTimeout(() => {
                         initLightweightChart();
                         chartInitialized = true;
@@ -99,7 +96,6 @@ socket.on('market_update', (data) => {
             renderStockTable(latestStockData);
         }
 
-        // UPDATE LIVE CHART CANDLE
         if (chartInitialized && chartCandles.length > 0) {
             const livePrice = window.livePrices[chartSymbol];
             const lastCandle = chartCandles[chartCandles.length - 1];
@@ -113,14 +109,12 @@ socket.on('market_update', (data) => {
     }
 });
 
-
-// --- UNRESTRICTED OPEN SOURCE CHART ENGINE ---
+// --- OPEN SOURCE CHART ENGINE ---
 function initLightweightChart() {
     const container = document.getElementById('custom_chart_container');
     if(!container) return;
     container.innerHTML = ''; 
 
-    // Use absolute sizing based on parent container to avoid 0x0 glitch
     const chartWidth = container.parentElement.clientWidth || 800;
     const chartHeight = container.parentElement.clientHeight || 650;
 
@@ -144,7 +138,6 @@ function initLightweightChart() {
 
     generateChartData();
     
-    // NEW: Resize Observer automatically fixes the chart size when switching tabs or resizing window
     new ResizeObserver(entries => {
         if (entries.length === 0 || entries[0].target !== container) return;
         const newRect = entries[0].contentRect;
@@ -243,7 +236,7 @@ window.toggleIndicator = function(type) {
     } 
     if (type === 'SR') {
         isSRActive = !isSRActive;
-        document.getElementById('toggle-sr').innerText = isSRActive ? 'Auto S/R Lines (On)' : 'Auto S/R Lines (Off)';
+        document.getElementById('toggle-sr').innerText = isSRActive ? 'Auto S/R (On)' : 'Auto S/R (Off)';
         document.getElementById('toggle-sr').classList.toggle('active');
         updateSRLines();
     }
@@ -255,8 +248,6 @@ window.toggleIndicator = function(type) {
     }
 }
 
-
-// --- SCREENER AND OI LOGIC (Unchanged) ---
 const scanningPhrases = ["Connecting to NSE Data Feeds...", "Analyzing Volume Profiles...", "Calculating Moving Averages...", "Scanning Sector Momentum...", "Processing Algorithms...", "Finalizing Trades..."];
 socket.on('screener_data_direct', (data) => { if(data && data.length > 0) latestStockData = data; });
 

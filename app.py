@@ -1,4 +1,4 @@
-# --- CRUCIAL: Must be at the very top for Cloud WebSockets to run background threads ---
+# --- CRUCIAL: Must be at the very top for Cloud WebSockets ---
 import eventlet
 eventlet.monkey_patch()
 
@@ -116,7 +116,6 @@ def format_expiries(expiry_list):
         mapping[d.strftime('%d-%b-%Y')] = label
     return mapping, [mapping[d.strftime('%d-%b-%Y')] for d in parsed[:4]]
 
-
 mock_oi_state = {}
 
 def generate_mock_oi(symbol, spot_price):
@@ -205,7 +204,6 @@ def fetch_market_pulse():
     while True:
         try:
             r = req_session.get("https://www.nseindia.com/api/allIndices", timeout=4)
-            # If NSE blocks the Cloud IP, this triggers the Exception and falls back to Mock engine immediately
             if r.status_code != 200:
                 raise Exception("Cloud IP Blocked")
             
@@ -254,7 +252,6 @@ def fetch_market_pulse():
 
         except Exception as e:
             # --- CLOUD FAILOVER ENGINE ---
-            # If NSE blocks Render's IP, beautifully simulate the entire market so the UI remains active
             mock_spots['NIFTY 50'] += random.uniform(-3, 3)
             mock_spots['NIFTY BANK'] += random.uniform(-8, 8)
             mock_spots['NIFTY FIN SERVICE'] += random.uniform(-4, 4)
@@ -308,6 +305,8 @@ def fetch_market_pulse():
 def handle_screener_refresh():
     socketio.emit('screener_data_direct', global_market_state.get('stock_analysis', []), to=request.sid)
 
+# --- START THE BACKGROUND ENGINE GLOBALLY FOR GUNICORN (RENDER) ---
+socketio.start_background_task(fetch_market_pulse)
+
 if __name__ == '__main__':
-    eventlet.spawn(fetch_market_pulse)
     socketio.run(app, host='0.0.0.0', port=5001, debug=False)
