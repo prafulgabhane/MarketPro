@@ -1,0 +1,75 @@
+<div id="oi-section" class="content-section">
+    <div class="section-header" style="display: flex; justify-content: space-between; align-items: flex-end;">
+        <div>
+            <h2>Open Interest Analysis</h2>
+            <p>Live Resistance (Red) and Support (Green) levels.</p>
+        </div>
+        
+        <div style="display: flex; gap: 15px; align-items: center;">
+            <select class="premium-select" id="expiry-select" onchange="changeExpiry()">
+                <option value="">Loading Expiries...</option>
+            </select>
+
+            <div class="segmented-control" id="oi-slider">
+                <div class="slider-bg" id="oi-slider-bg"></div>
+                <div class="segment active" data-index="NIFTY" onclick="switchOI('NIFTY', this)">NIFTY</div>
+                <div class="segment" data-index="BANKNIFTY" onclick="switchOI('BANKNIFTY', this)">BANKNIFTY</div>
+                <div class="segment" data-index="FINNIFTY" onclick="switchOI('FINNIFTY', this)">FINNIFTY</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="premium-card" style="padding: 0; overflow: hidden; margin-bottom: 20px;">
+        <div class="oi-header-row">
+            <div style="flex:1; text-align: right; color: var(--danger); padding-right: 15px;">CALL OI</div>
+            <div class="header-col">CALL LTP</div>
+            <div class="header-col-strike">STRIKE</div>
+            <div class="header-col">PCR</div>
+            <div class="header-col">PUT LTP</div>
+            <div style="flex:1; text-align: left; color: var(--success); padding-left: 15px;">PUT OI</div>
+        </div>
+        <div id="oi-table-body">
+            <div style="padding: 30px; text-align: center; color: #64748b;">Loading Live Option Chain...</div>
+        </div>
+    </div>
+
+    <div class="oi-summary-box">
+        <div class="oi-summary-header">Market Conclusion & Summary</div>
+        
+        <div class="oi-conclusion-grid">
+            <div class="conc-item">
+                <span class="conc-label">Major Support</span>
+                <span class="conc-val" id="conc-support" style="color: var(--success);">--</span>
+            </div>
+            <div class="conc-item" style="border-left: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0;">
+                <span class="conc-label">Major Resistance</span>
+                <span class="conc-val" id="conc-resistance" style="color: var(--danger);">--</span>
+            </div>
+            <div class="conc-item">
+                <span class="conc-label">Market Trend</span>
+                <span class="conc-val" id="conc-trend">--</span>
+            </div>
+        </div>
+
+        <p id="oi-summary-text" class="oi-beginner-text">
+            Waiting for data to generate analysis...
+        </p>
+
+        <div style="text-align: center; margin-top: 20px;">
+            <button onclick="toggleDeepInsights()" class="btn-outline">Learn More / Deep Insights ↓</button>
+        </div>
+
+        <div id="deep-insight-panel" class="deep-insight-panel">
+            <div class="insight-row">
+                <div class="insight-title">Max Pain Strike (Options)</div>
+                <div id="deep-max-pain" class="insight-data">--</div>
+                <p>Max Pain represents the strike price where the most option contracts will expire worthless. Markets often gravitate towards this number on expiry day.</p>
+            </div>
+            <div class="insight-row">
+                <div class="insight-title">Highest Strike PCR Indicator</div>
+                <div id="deep-high-pcr" class="insight-data">--</div>
+                <p>This is the individual strike price with the most extreme ratio of Puts to Calls. A highly skewed ratio at a specific strike suggests Smart Money is heavily defending that exact level.</p>
+            </div>
+        </div>
+    </div>
+</div>

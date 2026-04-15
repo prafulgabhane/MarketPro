@@ -1,0 +1,41 @@
+<div id="chart-section" class="content-section">
+    <div class="section-header" style="display: flex; justify-content: space-between; align-items: flex-end;">
+        <div>
+            <h2>Open-Source Quant Chart</h2>
+            <p>Live index charting with algorithmic Support/Resistance and Auto Trendlines. Zero API restrictions.</p>
+        </div>
+    </div>
+
+    <div class="chart-controls-panel">
+        <div class="chart-controls-left">
+            <select id="chart-symbol" class="premium-select" onchange="reloadChart()">
+                <option value="NIFTY">NIFTY 50</option>
+                <option value="BANKNIFTY">BANK NIFTY</option>
+                <option value="FINNIFTY">FIN NIFTY</option>
+                <option value="SENSEX">SENSEX</option>
+            </select>
+
+            <div class="segmented-control" style="background: white; border: 1px solid #e2e8f0;">
+                <div class="segment tf-segment" onclick="setChartTF('5', this)">5m</div>
+                <div class="segment tf-segment active" onclick="setChartTF('15', this)">15m</div>
+                <div class="segment tf-segment" onclick="setChartTF('60', this)">1H</div>
+            </div>
+        </div>
+
+        <div class="chart-controls-right">
+            <button id="toggle-ma" class="chart-toggle-btn" onclick="toggleIndicator('MA')">
+                Moving Average (Off)
+            </button>
+            <button id="toggle-sr" class="chart-toggle-btn" onclick="toggleIndicator('SR')">
+                Auto S/R (Off)
+            </button>
+            <button id="toggle-tl" class="chart-toggle-btn" onclick="toggleIndicator('TL')">
+                Auto Trendlines (Off)
+            </button>
+        </div>
+    </div>
+
+    <div class="premium-card" style="padding: 0; height: 650px; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0;">
+        <div id="custom_chart_container" style="width: 100%; height: 100%;"></div>
+    </div>
+</div>

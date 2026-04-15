@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login | MarketPro</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=2.0">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body class="login-body">
+    <div class="login-card">
+        <div class="logo-icon" style="margin: 0 auto 20px auto; width: max-content;">M</div>
+        <h2 style="text-align: center; margin-bottom: 30px; margin-top: 0;">Market<span style="color: #6366f1;">Pro</span></h2>
+        
+        {% if error %}
+            <div style="color: #f43f5e; background: #fff1f2; padding: 10px; border-radius: 8px; text-align: center; margin-bottom: 20px; font-size: 14px; font-weight: 600;">{{ error }}</div>
+        {% endif %}
+
+        <form method="POST" action="/login">
+            <div class="input-group">
+                <label>Username</label>
+                <input type="text" name="username" required placeholder="Enter username">
+            </div>
+            <div class="input-group">
+                <label>Password</label>
+                <input type="password" name="password" required placeholder="••••••••">
+            </div>
+            <button type="submit" class="btn-primary" style="width: 100%; margin-top: 10px;">Access Terminal</button>
+        </form>
+    </div>
+</body>
+</html>

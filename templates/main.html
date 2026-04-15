@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MarketPro | Premium Terminal</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=12.0">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="logo-icon">M</div>
+                <h2>Market<span>Pro</span></h2>
+            </div>
+            <nav>
+                <div class="nav-item active" data-target="dashboard-section">Dashboard</div>
+                <div class="nav-item" data-target="chart-section">Interactive Chart</div>
+                <div class="nav-item" data-target="stocks-section">Stock Analysis</div>
+                <div class="nav-item" data-target="options-section">Option Analytics</div>
+                <div class="nav-item" data-target="heatmap-section">Sector Heatmap</div>
+                <div class="nav-item" data-target="oi-section">OI Data</div>
+                <div class="nav-item" data-target="fiidii-section">FII / DII Data</div>
+            </nav>
+            <div class="upgrade-card">
+                <p>Welcome, {{ username }}</p>
+                <a href="/logout"><button>Log Out</button></a>
+            </div>
+        </aside>
+
+        <main class="main-view">
+            <header class="glass-header">
+                <div class="header-left">
+                    <h1 id="clock">00:00:00</h1>
+                    <p style="color: #64748b; font-weight: 500; margin-top: 5px;">Pro Subscription Active</p>
+                </div>
+                <div class="user-profile">
+                    <span id="mkt-status" class="status-pill">● Connecting...</span>
+                </div>
+            </header>
+
+            {% include 'sec_dashboard.html' %}
+            {% include 'sec_chart.html' %}
+            {% include 'sec_stocks.html' %}
+            {% include 'sec_options.html' %}
+            {% include 'sec_heatmap.html' %}
+            {% include 'sec_oi.html' %}
+            {% include 'sec_fiidii.html' %}
+
+        </main>
+    </div>
+    <script src="{{ url_for('static', filename='script.js') }}?v=12.0"></script>
+</body>
+</html>

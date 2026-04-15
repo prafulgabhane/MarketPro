@@ -1,0 +1,102 @@
+<div id="stocks-section" class="content-section">
+    <div class="section-header" style="display: flex; justify-content: space-between; align-items: flex-end;">
+        <div>
+            <h2>Stock Screener</h2>
+            <p>Click on any row to open the detailed institutional trade sheet.</p>
+        </div>
+        
+        <button id="refresh-screener-btn" class="btn-primary" style="display: flex; align-items: center; gap: 8px; padding: 12px 20px; border-radius: 12px; font-size: 15px;">
+            <span style="font-size: 18px; line-height: 1;">↻</span> Refresh
+        </button>
+    </div>
+
+    <div class="table-wrapper">
+        <table class="pro-floating-table">
+            <thead>
+                <tr>
+                    <th>Stock Symbol</th>
+                    <th>Action</th>
+                    <th>CMP / Entry</th>
+                    <th>Stop Loss</th>
+                    <th>Targets (T1/T2)</th>
+                    <th>Time Horizon</th>
+                    <th>Approximate Gain</th>
+                </tr>
+            </thead>
+            <tbody id="stocks-table-body">
+                <tr><td colspan="7" style="text-align:center; padding: 30px;">Loading Screener...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div id="stock-modal" class="modal-overlay">
+        <div class="modal-content-pro">
+            <div class="modal-header-pro">
+                <div style="display: flex; flex-direction: column;">
+                    <h2 id="modal-title">--</h2>
+                    <span id="modal-subtitle">--</span>
+                </div>
+                <div style="display: flex; gap: 15px; align-items: center;">
+                    <div id="modal-action-badge" class="action-buy">--</div>
+                    <button class="close-btn" onclick="closeStockModal()">✕</button>
+                </div>
+            </div>
+            
+            <div class="modal-body-pro">
+                <div class="stats-grid-pro">
+                    <div class="stat-box">
+                        <span class="stat-label">Current Price</span>
+                        <div id="modal-cmp" class="stat-value">--</div>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">Entry Zone</span>
+                        <div id="modal-entry" class="stat-value">--</div>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">Stop Loss</span>
+                        <div id="modal-sl" class="stat-value" style="color: #f43f5e;">--</div>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">Target (T1)</span>
+                        <div id="modal-t1" class="stat-value" style="color: #10b981;">--</div>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">Approx Gain</span>
+                        <div id="modal-gain" class="stat-value" style="color: #10b981;">--</div>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">System Risk</span>
+                        <div id="modal-risk" class="risk-badge" style="width: max-content; margin-top: 5px;">--</div>
+                    </div>
+                </div>
+
+                <div class="vis-section">
+                    <div class="vis-header">
+                        <span>Risk vs Reward Visualizer</span>
+                        <span id="modal-horizon" style="font-weight: 800; color: #1e293b;">--</span>
+                    </div>
+                    <div class="visualizer-container">
+                        <div class="vis-labels">
+                            <span id="vis-sl-label" style="color:#f43f5e; font-weight:700;">SL</span>
+                            <span id="vis-target-label" style="color:#10b981; font-weight:700;">Target</span>
+                        </div>
+                        <div class="vis-bar-bg">
+                            <div id="vis-risk" class="vis-risk"></div>
+                            <div id="vis-reward" class="vis-reward"></div>
+                            <div id="vis-marker" class="vis-marker"></div>
+                        </div>
+                        <div style="text-align: center; margin-top: 10px; font-size: 12px; color: #64748b; font-weight: 700;">▲ CURRENT PRICE</div>
+                    </div>
+                </div>
+
+                <div class="rationale-box">
+                    <div class="rationale-header">
+                        <span>Quantitative Rationale</span>
+                        <span class="confidence-badge">Score: <b id="modal-confidence">--</b>/100</span>
+                    </div>
+                    <p id="modal-reason">--</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,19 @@
+<div id="heatmap-section" class="content-section">
+    <div class="section-header" style="display: flex; justify-content: space-between; align-items: flex-end;">
+        <div>
+            <h2>Advanced Sector Heatmap</h2>
+            <p>Live tracking of indices and sector rotation.</p>
+        </div>
+        
+        <div class="segmented-control">
+            <div class="slider-bg" id="slider-bg"></div>
+            <div class="segment active" data-filter="All" onclick="filterHeatmap('All', this)">All Sectors</div>
+            <div class="segment" data-filter="Broad" onclick="filterHeatmap('Broad', this)">Broad Market</div>
+            <div class="segment" data-filter="Sectoral" onclick="filterHeatmap('Sectoral', this)">Industries</div>
+            <div class="segment" data-filter="Financial" onclick="filterHeatmap('Financial', this)">Financials</div>
+        </div>
+    </div>
+    
+    <div class="advanced-heatmap-grid" id="adv-heatmap-grid">
+        </div>
+</div>
