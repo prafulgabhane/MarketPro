@@ -1,7 +1,4 @@
-# --- CRUCIAL: Must be at the very top for Cloud WebSockets ---
-import eventlet
-eventlet.monkey_patch()
-
+import os
 from curl_cffi import requests
 from flask import Flask, render_template, request, redirect, url_for, session
 from flask_socketio import SocketIO
@@ -13,7 +10,8 @@ import concurrent.futures
 
 app = Flask(__name__)
 app.secret_key = "marketpro_secret_2026" 
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
+# FIXED: Reverted to native threading which plays perfectly with the stealth scraper
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
 global_market_state = {}
 mock_spots = {'NIFTY 50': 22050.50, 'NIFTY BANK': 46120.30, 'NIFTY FIN SERVICE': 20540.10}
@@ -305,8 +303,13 @@ def fetch_market_pulse():
 def handle_screener_refresh():
     socketio.emit('screener_data_direct', global_market_state.get('stock_analysis', []), to=request.sid)
 
-# --- START THE BACKGROUND ENGINE GLOBALLY FOR GUNICORN (RENDER) ---
-socketio.start_background_task(fetch_market_pulse)
-
+# --- FIXED FOR RENDER DYNAMIC PORT BINDING ---
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5001, debug=False)
+    # Grab Render's random PORT environment variable, fallback to 5001 locally
+    port = int(os.environ.get("PORT", 5001))
+    
+    # Start the engine in a standard background thread
+    threading.Thread(target=fetch_market_pulse, daemon=True).start()
+    
+    # Start the server listening on ALL addresses (0.0.0.0)
+    socketio.run(app, host='0.0.0.0', port=port, debug=False, allow_unsafe_werkzeug=True)
