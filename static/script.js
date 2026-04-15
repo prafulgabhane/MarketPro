@@ -53,16 +53,17 @@ document.addEventListener("DOMContentLoaded", function() {
     }, 1000);
 });
 
-// --- NEW: MICROSERVICE POLLING ARCHITECTURE ---
+// --- BULLETPROOF DATA POLLING ---
 async function fetchMarketData() {
     try {
         let response = await fetch('/api/market_data');
         if (response.ok) {
             let data = await response.json();
-            if (Object.keys(data).length > 0) {
+            
+            // Failsafe: Ensures data exists before attempting to process
+            if (data && data.nifty) {
                 processMarketData(data);
                 
-                // Connection badge success
                 let status = document.getElementById('mkt-status');
                 if(status) {
                     status.innerText = "● LIVE CONNECTION";
@@ -72,11 +73,7 @@ async function fetchMarketData() {
             }
         }
     } catch (e) {
-        let status = document.getElementById('mkt-status');
-        if(status) {
-            status.innerText = "● RECONNECTING...";
-            status.style.color = "#f59e0b";
-        }
+        console.log("Waiting for data stream...");
     }
 }
 
@@ -268,9 +265,8 @@ window.toggleIndicator = function(type) {
     }
 }
 
-const scanningPhrases = ["Connecting to NSE Data Feeds...", "Analyzing Volume Profiles...", "Calculating Moving Averages...", "Scanning Sector Momentum...", "Processing Algorithms...", "Finalizing Trades..."];
+const scanningPhrases = ["Connecting to Data Feeds...", "Analyzing Volume Profiles...", "Calculating Moving Averages...", "Scanning Sector Momentum...", "Processing Algorithms...", "Finalizing Trades..."];
 
-// Rest API approach for the scanner
 document.getElementById('refresh-screener-btn').addEventListener('click', async function() {
     if(isScanning) return; 
     isScanning = true;
