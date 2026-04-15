@@ -10,11 +10,14 @@ import concurrent.futures
 
 app = Flask(__name__)
 app.secret_key = "marketpro_secret_2026" 
-# Use native threading so the C-based stealth scraper doesn't freeze the server
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
 global_market_state = {}
 mock_spots = {'NIFTY 50': 22050.50, 'NIFTY BANK': 46120.30, 'NIFTY FIN SERVICE': 20540.10}
+
+# --- FIXED: Threading Locks for Safe Cloud Execution ---
+bg_thread = None
+thread_lock = threading.Lock()
 
 @app.route('/')
 def index():
@@ -43,6 +46,12 @@ def app_terminal():
 
 @socketio.on('connect')
 def handle_connect():
+    global bg_thread
+    with thread_lock:
+        if bg_thread is None:
+            # Wakes up the data engine INSIDE the cloud worker upon first connection
+            bg_thread = socketio.start_background_task(fetch_market_pulse)
+            
     global global_market_state
     if global_market_state:
         socketio.emit('market_update', global_market_state, to=request.sid)
@@ -113,8 +122,6 @@ def format_expiries(expiry_list):
         label = f"{d.strftime('%d %b %Y')} ({'M' if is_monthly else 'W'})"
         mapping[d.strftime('%d-%b-%Y')] = label
     return mapping, [mapping[d.strftime('%d-%b-%Y')] for d in parsed[:4]]
-
-mock_oi_state = {}
 
 def generate_mock_oi(symbol, spot_price):
     global mock_oi_state
@@ -193,7 +200,12 @@ def fetch_real_oi(session_req, symbol, spot_price):
 
 def fetch_market_pulse():
     global global_market_state, mock_spots
-    req_session = create_nse_session()
+    
+    # Wrap session creation in try/except so Linux failures don't kill the thread
+    try:
+        req_session = create_nse_session()
+    except Exception:
+        req_session = None
     
     broad = ['NIFTY 50', 'NIFTY NEXT 50', 'NIFTY MIDCAP 100']
     sectoral = ['NIFTY AUTO', 'NIFTY IT', 'NIFTY METAL', 'NIFTY PHARMA']
@@ -201,6 +213,9 @@ def fetch_market_pulse():
 
     while True:
         try:
+            if req_session is None:
+                raise Exception("Cloud Session Failed - Forcing Failover")
+                
             r = req_session.get("https://www.nseindia.com/api/allIndices", timeout=4)
             if r.status_code != 200:
                 raise Exception("Cloud IP Blocked")
@@ -302,10 +317,6 @@ def fetch_market_pulse():
 @socketio.on('request_screener_refresh')
 def handle_screener_refresh():
     socketio.emit('screener_data_direct', global_market_state.get('stock_analysis', []), to=request.sid)
-
-# --- START BACKGROUND DATA ENGINE SO GUNICORN SEES IT ---
-engine_thread = threading.Thread(target=fetch_market_pulse, daemon=True)
-engine_thread.start()
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5001))
