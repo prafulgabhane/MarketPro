@@ -1,23 +1,17 @@
 import os
-from curl_cffi import requests
-from flask import Flask, render_template, request, redirect, url_for, session
-from flask_socketio import SocketIO
 import threading
 import time
 import random
-from datetime import datetime
 import concurrent.futures
+from datetime import datetime
+from curl_cffi import requests
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 
 app = Flask(__name__)
 app.secret_key = "marketpro_secret_2026" 
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
 global_market_state = {}
 mock_spots = {'NIFTY 50': 22050.50, 'NIFTY BANK': 46120.30, 'NIFTY FIN SERVICE': 20540.10}
-
-# --- FIXED: Threading Locks for Safe Cloud Execution ---
-bg_thread = None
-thread_lock = threading.Lock()
 
 @app.route('/')
 def index():
@@ -44,23 +38,20 @@ def app_terminal():
     if 'user' not in session: return redirect(url_for('login'))
     return render_template('main.html', username=session['user'].capitalize())
 
-@socketio.on('connect')
-def handle_connect():
-    global bg_thread
-    with thread_lock:
-        if bg_thread is None:
-            # Wakes up the data engine INSIDE the cloud worker upon first connection
-            bg_thread = socketio.start_background_task(fetch_market_pulse)
-            
-    global global_market_state
-    if global_market_state:
-        socketio.emit('market_update', global_market_state, to=request.sid)
+# --- NEW: BLZING FAST REST API ENDPOINTS ---
+@app.route('/api/market_data')
+def get_market_data():
+    return jsonify(global_market_state)
 
+@app.route('/api/screener_data')
+def get_screener_data():
+    return jsonify(global_market_state.get('stock_analysis', []))
+
+# --- DATA FETCHING ENGINE (Unchanged Math) ---
 def create_nse_session():
     s = requests.Session(impersonate="chrome120")
     s.headers.update({"Referer": "https://www.nseindia.com/"})
-    try:
-        s.get("https://www.nseindia.com", timeout=5)
+    try: s.get("https://www.nseindia.com", timeout=5)
     except: pass
     return s
 
@@ -122,6 +113,8 @@ def format_expiries(expiry_list):
         label = f"{d.strftime('%d %b %Y')} ({'M' if is_monthly else 'W'})"
         mapping[d.strftime('%d-%b-%Y')] = label
     return mapping, [mapping[d.strftime('%d-%b-%Y')] for d in parsed[:4]]
+
+mock_oi_state = {}
 
 def generate_mock_oi(symbol, spot_price):
     global mock_oi_state
@@ -201,11 +194,8 @@ def fetch_real_oi(session_req, symbol, spot_price):
 def fetch_market_pulse():
     global global_market_state, mock_spots
     
-    # Wrap session creation in try/except so Linux failures don't kill the thread
-    try:
-        req_session = create_nse_session()
-    except Exception:
-        req_session = None
+    try: req_session = create_nse_session()
+    except Exception: req_session = None
     
     broad = ['NIFTY 50', 'NIFTY NEXT 50', 'NIFTY MIDCAP 100']
     sectoral = ['NIFTY AUTO', 'NIFTY IT', 'NIFTY METAL', 'NIFTY PHARMA']
@@ -213,12 +203,10 @@ def fetch_market_pulse():
 
     while True:
         try:
-            if req_session is None:
-                raise Exception("Cloud Session Failed - Forcing Failover")
+            if req_session is None: raise Exception("Session Failed")
                 
             r = req_session.get("https://www.nseindia.com/api/allIndices", timeout=4)
-            if r.status_code != 200:
-                raise Exception("Cloud IP Blocked")
+            if r.status_code != 200: raise Exception("Cloud IP Blocked")
             
             try: data = r.json()
             except ValueError: 
@@ -261,10 +249,9 @@ def fetch_market_pulse():
                 'fii_dii': latest_fii,
                 'stock_analysis': latest_stocks 
             }
-            socketio.emit('market_update', global_market_state)
 
         except Exception as e:
-            # --- CLOUD FAILOVER ENGINE ---
+            # --- MOCK FAILOVER ENGINE IF RENDER GETS BLOCKED ---
             mock_spots['NIFTY 50'] += random.uniform(-3, 3)
             mock_spots['NIFTY BANK'] += random.uniform(-8, 8)
             mock_spots['NIFTY FIN SERVICE'] += random.uniform(-4, 4)
@@ -310,14 +297,12 @@ def fetch_market_pulse():
                 'fii_dii': latest_fii,
                 'stock_analysis': latest_stocks 
             }
-            socketio.emit('market_update', global_market_state)
 
         time.sleep(4)
 
-@socketio.on('request_screener_refresh')
-def handle_screener_refresh():
-    socketio.emit('screener_data_direct', global_market_state.get('stock_analysis', []), to=request.sid)
+# --- START DAEMON THREAD (Works perfectly in Gunicorn) ---
+threading.Thread(target=fetch_market_pulse, daemon=True).start()
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5001))
-    socketio.run(app, host='0.0.0.0', port=port, debug=False)
+    app.run(host='0.0.0.0', port=port, debug=False)

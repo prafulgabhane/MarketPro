@@ -1,6 +1,3 @@
-// --- DYNAMIC CLOUD SOCKET CONNECTION ---
-const socket = io();
-
 let latestHeatmapData = [];
 let latestOIData = {};
 let latestStockData = [];
@@ -9,7 +6,7 @@ let currentOIIndex = 'NIFTY';
 let currentExpiry = ''; 
 let isScanning = false;
 
-// --- CUSTOM CHART STATE VARIABLES ---
+// --- CHART STATE VARIABLES ---
 let chartSymbol = 'NIFTY';
 let chartTF = '15';
 let isMAActive = false;
@@ -23,7 +20,7 @@ let chartCandles = [];
 window.livePrices = { NIFTY: 22000, BANKNIFTY: 46000, FINNIFTY: 20500, SENSEX: 73000 };
 
 document.addEventListener("DOMContentLoaded", function() {
-    console.log("MarketPro Premium JS Engine Loaded Successfully.");
+    console.log("MarketPro JS Engine Loaded.");
 
     document.querySelectorAll('.nav-item').forEach(item => {
         item.addEventListener('click', function() {
@@ -56,16 +53,39 @@ document.addEventListener("DOMContentLoaded", function() {
     }, 1000);
 });
 
-socket.on('connect', () => {
-    const status = document.getElementById('mkt-status');
-    if(status) {
-        status.innerText = "● LIVE CONNECTION";
-        status.style.color = "#10b981";
-        status.style.background = "rgba(16, 185, 129, 0.1)";
+// --- NEW: MICROSERVICE POLLING ARCHITECTURE ---
+async function fetchMarketData() {
+    try {
+        let response = await fetch('/api/market_data');
+        if (response.ok) {
+            let data = await response.json();
+            if (Object.keys(data).length > 0) {
+                processMarketData(data);
+                
+                // Connection badge success
+                let status = document.getElementById('mkt-status');
+                if(status) {
+                    status.innerText = "● LIVE CONNECTION";
+                    status.style.color = "#10b981";
+                    status.style.background = "rgba(16, 185, 129, 0.1)";
+                }
+            }
+        }
+    } catch (e) {
+        let status = document.getElementById('mkt-status');
+        if(status) {
+            status.innerText = "● RECONNECTING...";
+            status.style.color = "#f59e0b";
+        }
     }
-});
+}
 
-socket.on('market_update', (data) => {
+// Initial fetch and 4-second loop
+fetchMarketData();
+setInterval(fetchMarketData, 4000);
+
+// --- MAIN DATA PROCESSOR ---
+function processMarketData(data) {
     try {
         if (data.nifty) {
             updateDashboardCard('nifty-card', 'nifty', data.nifty);
@@ -105,9 +125,9 @@ socket.on('market_update', (data) => {
             candleSeries.update(lastCandle);
         }
     } catch (err) {
-        console.error("Data Payload Error:", err);
+        console.error("Data Processing Error:", err);
     }
-});
+}
 
 // --- OPEN SOURCE CHART ENGINE ---
 function initLightweightChart() {
@@ -249,20 +269,27 @@ window.toggleIndicator = function(type) {
 }
 
 const scanningPhrases = ["Connecting to NSE Data Feeds...", "Analyzing Volume Profiles...", "Calculating Moving Averages...", "Scanning Sector Momentum...", "Processing Algorithms...", "Finalizing Trades..."];
-socket.on('screener_data_direct', (data) => { if(data && data.length > 0) latestStockData = data; });
 
-document.getElementById('refresh-screener-btn').addEventListener('click', function() {
+// Rest API approach for the scanner
+document.getElementById('refresh-screener-btn').addEventListener('click', async function() {
     if(isScanning) return; 
     isScanning = true;
     const tbody = document.getElementById('stocks-table-body');
     let phraseIdx = 0;
     tbody.innerHTML = `<tr><td colspan="7" style="text-align: center;"><div class="scanner-box"><div class="radar-spinner"></div><div id="scan-text" class="scan-text">${scanningPhrases[0]}</div></div></td></tr>`;
-    socket.emit('request_screener_refresh');
+    
     const interval = setInterval(() => {
         phraseIdx++;
         if(phraseIdx < scanningPhrases.length) document.getElementById('scan-text').innerText = scanningPhrases[phraseIdx];
     }, 1000);
-    setTimeout(() => { clearInterval(interval); isScanning = false; renderStockTable(latestStockData); }, 6000);
+    
+    try {
+        let response = await fetch('/api/screener_data');
+        let data = await response.json();
+        setTimeout(() => { clearInterval(interval); isScanning = false; renderStockTable(data); }, 6000);
+    } catch(e) {
+        setTimeout(() => { clearInterval(interval); isScanning = false; renderStockTable(latestStockData); }, 6000);
+    }
 });
 
 function renderStockTable(stocks) {
